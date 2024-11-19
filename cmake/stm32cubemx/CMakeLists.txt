@@ -18,7 +18,6 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy
     ../../Drivers/CMSIS/Device/ST/STM32G4xx/Include
     ../../Drivers/CMSIS/Include
-    ../../Drivers/VL53L4CD_ULD_Driver/Inc
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -27,7 +26,6 @@ target_sources(stm32cubemx INTERFACE
     ../../Core/Src/fdcan.c
     ../../Core/Src/i2c.c
     ../../Core/Src/usart.c
-    ../../Core/Src/platform.c
     ../../Core/Src/stm32g4xx_it.c
     ../../Core/Src/stm32g4xx_hal_msp.c
     ../../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c
@@ -50,8 +48,6 @@ target_sources(stm32cubemx INTERFACE
     ../../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c
     ../../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.c
     ../../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c
-    ../../Drivers/VL53L4CD_ULD_Driver/VL53L4CD_api.c
-    ../../Drivers/VL53L4CD_ULD_Driver/VL53L4CD_calibration.c
     ../../Core/Src/system_stm32g4xx.c
     ../../Core/Src/sysmem.c
     ../../Core/Src/syscalls.c

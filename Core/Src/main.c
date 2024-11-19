@@ -24,6 +24,7 @@
 #include "i2c.h"
 #include "stm32g4xx_hal_gpio.h"
 #include "stm32g4xx_hal_uart.h"
+#include "tof.h"
 #include "usart.h"
 #include <stdio.h>
 
@@ -39,7 +40,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define VL53L4CD_DEFAULT_I2C_ADDRESS 0x52
+#define TOF_ADDRESS VL53L4CD_DEFAULT_I2C_ADDRESS
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -86,9 +87,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 int main(void) {
 
     /* USER CODE BEGIN 1 */
-    uint16_t dev, sensor_id;
     int status;
-    VL53L4CD_Version_t version;
     VL53L4CD_ResultsData_t results;
 
     /* USER CODE END 1 */
@@ -121,38 +120,15 @@ int main(void) {
     sprintf((char *)data, "Serial initialized");
     HAL_UART_Transmit(&huart2, data, sizeof(data), 0xFFFF);
 
-    dev = VL53L4CD_DEFAULT_I2C_ADDRESS;
-
-    HAL_GPIO_WritePin(GPIOB, XSHUT_VL53L4CD_Pin, GPIO_PIN_RESET);
-    HAL_Delay(5);
-    HAL_GPIO_WritePin(GPIOB, XSHUT_VL53L4CD_Pin, GPIO_PIN_SET);
-    HAL_Delay(5);
-
-    status = VL53L4CD_GetSWVersion(&version);
+    status = TOF_Setup(TOF_ADDRESS);
 
     if (status) {
-        sprintf((char *)data, "Cannot get VL53L4CD sw version: %x\n", status);
+        sprintf((char *)data, "Cannot setup VL53L4CD: %x\n", status);
         HAL_UART_Transmit(&huart2, data, sizeof(data), 0xFFFF);
         return status;
     }
 
-    status = VL53L4CD_GetSensorId(dev, &sensor_id);
-
-    if (status || (sensor_id != 0xebaa)) {
-        sprintf((char *)data, "Cannot get VL53L4CD sw version: %x\n", status);
-        HAL_UART_Transmit(&huart2, data, sizeof(data), 0xFFFF);
-        return status;
-    }
-
-    status = VL53L4CD_SensorInit(dev);
-
-    if (status) {
-        sprintf((char *)data, "Cannot init VL53L4CD: %x\n", status);
-        HAL_UART_Transmit(&huart2, data, sizeof(data), 0xFFFF);
-        return status;
-    }
-
-    status = VL53L4CD_SetRangeTiming(dev, 10, 0);
+    status = VL53L4CD_SetRangeTiming(TOF_ADDRESS, 10, 0);
 
     if (status) {
         sprintf((char *)data, "Cannot set range of VL53L4CD: %x\n", status);
@@ -160,7 +136,7 @@ int main(void) {
         return status;
     }
 
-    status = VL53L4CD_StartRanging(dev);
+    status = VL53L4CD_StartRanging(TOF_ADDRESS);
 
     if (status) {
         sprintf((char *)data, "Cannot start ranging of VL53L4CD: %x\n", status);
@@ -176,7 +152,7 @@ int main(void) {
         /* USER CODE END WHILE */
         if (TOF_DATA_WAIT > 0) {
             TOF_DATA_WAIT = 0;
-            status = VL53L4CD_GetResult(dev, &results);
+            status = VL53L4CD_GetResult(TOF_ADDRESS, &results);
             // printf("Status = %3u, Distance = %5u mm, Signal = %6u
             // kcps/spad\n",
             //        results.range_status, results.distance_mm,
@@ -186,7 +162,7 @@ int main(void) {
                     results.range_status, results.distance_mm,
                     results.signal_per_spad_kcps);
             HAL_UART_Transmit(&huart2, data, sizeof(data), 0xFFFF);
-            status = VL53L4CD_ClearInterrupt(dev);
+            status = VL53L4CD_ClearInterrupt(TOF_ADDRESS);
         }
 
         /* USER CODE BEGIN 3 */
