@@ -2,6 +2,7 @@
 #include "VL53L4CD_api.h"
 #include "main.h"
 #include "stm32g4xx_hal_gpio.h"
+#include <stdio.h>
 
 int TOF_Setup(uint16_t address) {
     HAL_GPIO_WritePin(GPIOB, XSHUT_VL53L4CD_Pin, GPIO_PIN_RESET);
@@ -16,6 +17,8 @@ int TOF_Setup(uint16_t address) {
     } else if (sensor_ID != 0xebaa) {
         return VL53L4CD_ERROR_INCORRECT_SENSOR_ID_AT_ADDRESS;
     }
+
+    printf("VL53L4CD sensor id: %x\r\n", sensor_ID);
 
     return VL53L4CD_SensorInit(address);
 }

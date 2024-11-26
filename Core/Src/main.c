@@ -18,19 +18,18 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "VL53L4CD_api.h"
 #include "fdcan.h"
 #include "gpio.h"
 #include "i2c.h"
-#include "stm32g4xx_hal_gpio.h"
-#include "stm32g4xx_hal_uart.h"
-#include "tof.h"
+#include "stm32g4xx_hal_def.h"
+#include "stm32g4xx_hal_fdcan.h"
 #include "usart.h"
-#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "VL53L4CD_api.h"
+#include "tof.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,8 +50,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-volatile int TOF_DATA_WAIT = 0;
-unsigned char data[4096];
+volatile uint8_t TOF_DATA_WAIT = 0;
+VL53L4CD_ResultsData_t results;
+uint16_t tofResult;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -88,7 +88,6 @@ int main(void) {
 
     /* USER CODE BEGIN 1 */
     int status;
-    VL53L4CD_ResultsData_t results;
 
     /* USER CODE END 1 */
 
@@ -117,55 +116,90 @@ int main(void) {
     MX_I2C1_Init();
     /* USER CODE BEGIN 2 */
 
-    sprintf((char *)data, "Serial initialized");
-    HAL_UART_Transmit(&huart2, data, sizeof(data), 0xFFFF);
+    status = HAL_FDCAN_Start(&hfdcan1);
+
+    if (status) {
+        printf("Cannot start FDCAN: %x\r\n", status);
+        return status;
+    }
+
+    printf("Serial initialized\r\n");
 
     status = TOF_Setup(TOF_ADDRESS);
 
     if (status) {
-        sprintf((char *)data, "Cannot setup VL53L4CD: %x\n", status);
-        HAL_UART_Transmit(&huart2, data, sizeof(data), 0xFFFF);
+        printf("Cannot setup VL53L4CD: %x\r\n", status);
         return status;
     }
 
     status = VL53L4CD_SetRangeTiming(TOF_ADDRESS, 10, 0);
 
     if (status) {
-        sprintf((char *)data, "Cannot set range of VL53L4CD: %x\n", status);
-        HAL_UART_Transmit(&huart2, data, sizeof(data), 0xFFFF);
+        printf("Cannot set range of VL53L4CD: %x\r\n", status);
         return status;
     }
 
     status = VL53L4CD_StartRanging(TOF_ADDRESS);
 
     if (status) {
-        sprintf((char *)data, "Cannot start ranging of VL53L4CD: %x\n", status);
-        HAL_UART_Transmit(&huart2, data, sizeof(data), 0xFFFF);
+        printf("Cannot start ranging of VL53L4CD: %x\r\n", status);
         return status;
     }
+
+    // FDCAN header
+    FDCAN_TxHeaderTypeDef header;
+    header.Identifier = 0x1;
+    header.IdType = FDCAN_STANDARD_ID;
+    header.TxFrameType = FDCAN_FRAME_FD_NO_BRS;
+    header.DataLength = FDCAN_DLC_BYTES_2;
+    header.ErrorStateIndicator = FDCAN_ESI_PASSIVE;
+    header.BitRateSwitch = FDCAN_BRS_OFF;
+    header.FDFormat = FDCAN_CLASSIC_CAN;
+    header.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+    header.MessageMarker = 0;
 
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1) {
-        /* USER CODE END WHILE */
         if (TOF_DATA_WAIT > 0) {
             TOF_DATA_WAIT = 0;
-            status = VL53L4CD_GetResult(TOF_ADDRESS, &results);
-            // printf("Status = %3u, Distance = %5u mm, Signal = %6u
-            // kcps/spad\n",
-            //        results.range_status, results.distance_mm,
-            //        results.signal_per_spad_kcps);
-            sprintf((char *)data,
-                    "Status = %3u, Distance = %5u mm, Signal = %6u kcps/spad\n",
-                    results.range_status, results.distance_mm,
-                    results.signal_per_spad_kcps);
-            HAL_UART_Transmit(&huart2, data, sizeof(data), 0xFFFF);
+            int status = VL53L4CD_GetResult(TOF_ADDRESS, &results);
+            if (status) {
+                printf("Cannot get result from VL53L4CD: %x\r\n", status);
+                continue;
+            }
+            if (results.range_status == 0) {
+                tofResult = results.distance_mm;
+                printf(
+                    "Status = %3u, Distance = %5u mm, Hex = %x, Signal = %6u "
+                    "kcps/spad, Sigma = %6u mm\r\n",
+                    results.range_status, tofResult, tofResult,
+                    results.signal_per_spad_kcps, results.sigma_mm);
+                int status = HAL_FDCAN_AddMessageToTxFifoQ(
+                    &hfdcan1, &header, (uint8_t *)(&tofResult));
+
+                if (status != HAL_OK) {
+                    printf("Cannot add message to FDCAN: %x\r\n", status);
+                    goto clearInterrupt;
+                }
+            }
+        clearInterrupt:
             status = VL53L4CD_ClearInterrupt(TOF_ADDRESS);
+            if (status) {
+                printf("Cannot clear interrupt from VL53L4CD: %x\r\n", status);
+                continue;
+            }
         }
+        /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
+    }
+    status = VL53L4CD_StopRanging(TOF_ADDRESS);
+    if (status) {
+        printf("Cannot stop ranging VL53L4CD: %x\r\n", status);
+        return status;
     }
     /* USER CODE END 3 */
 }
@@ -180,7 +214,7 @@ void SystemClock_Config(void) {
 
     /** Configure the main internal regulator output voltage
      */
-    HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1_BOOST);
+    HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
 
     /** Initializes the RCC Oscillators according to the specified parameters
      * in the RCC_OscInitTypeDef structure.
@@ -190,8 +224,8 @@ void SystemClock_Config(void) {
     RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-    RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV4;
-    RCC_OscInitStruct.PLL.PLLN = 85;
+    RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
+    RCC_OscInitStruct.PLL.PLLN = 8;
     RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
     RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
     RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
@@ -208,7 +242,7 @@ void SystemClock_Config(void) {
     RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
     RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK) {
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
         Error_Handler();
     }
 }
@@ -222,7 +256,8 @@ void SystemClock_Config(void) {
  */
 void Error_Handler(void) {
     /* USER CODE BEGIN Error_Handler_Debug */
-    /* User can add his own implementation to report the HAL error return state
+    /* User can add his own implementation to report the HAL error return
+     * state
      */
     __disable_irq();
     while (1) {
