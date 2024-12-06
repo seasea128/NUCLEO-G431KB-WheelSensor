@@ -19,7 +19,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "fdcan.h"
-#include "stm32g4xx_hal_fdcan.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -40,14 +39,14 @@ void MX_FDCAN1_Init(void) {
     hfdcan1.Instance = FDCAN1;
     hfdcan1.Init.ClockDivider = FDCAN_CLOCK_DIV1;
     hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_NO_BRS;
-    hfdcan1.Init.Mode = FDCAN_MODE_EXTERNAL_LOOPBACK;
+    hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
     hfdcan1.Init.AutoRetransmission = DISABLE;
     hfdcan1.Init.TransmitPause = DISABLE;
     hfdcan1.Init.ProtocolException = DISABLE;
     hfdcan1.Init.NominalPrescaler = 32;
     hfdcan1.Init.NominalSyncJumpWidth = 1;
-    hfdcan1.Init.NominalTimeSeg1 = 2;
-    hfdcan1.Init.NominalTimeSeg2 = 2;
+    hfdcan1.Init.NominalTimeSeg1 = 1;
+    hfdcan1.Init.NominalTimeSeg2 = 1;
     hfdcan1.Init.DataPrescaler = 1;
     hfdcan1.Init.DataSyncJumpWidth = 1;
     hfdcan1.Init.DataTimeSeg1 = 1;

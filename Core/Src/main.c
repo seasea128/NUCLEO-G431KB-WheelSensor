@@ -21,8 +21,6 @@
 #include "fdcan.h"
 #include "gpio.h"
 #include "i2c.h"
-#include "stm32g4xx_hal_def.h"
-#include "stm32g4xx_hal_fdcan.h"
 #include "usart.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -182,10 +180,14 @@ int main(void) {
 
                 if (status != HAL_OK) {
                     printf("Cannot add message to FDCAN: %x\r\n", status);
-                    goto clearInterrupt;
+                    status = VL53L4CD_ClearInterrupt(TOF_ADDRESS);
+                    if (status) {
+                        printf("Cannot clear interrupt from VL53L4CD: %x\r\n",
+                               status);
+                        continue;
+                    }
                 }
             }
-        clearInterrupt:
             status = VL53L4CD_ClearInterrupt(TOF_ADDRESS);
             if (status) {
                 printf("Cannot clear interrupt from VL53L4CD: %x\r\n", status);
