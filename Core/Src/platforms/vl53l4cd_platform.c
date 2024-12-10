@@ -10,7 +10,7 @@
  ******************************************************************************
  */
 
-#include "platform.h"
+#include "vl53l4cd_platform.h"
 #include "i2c.h"
 #include "stm32g4xx_hal.h"
 #include "stm32g4xx_hal_i2c.h"

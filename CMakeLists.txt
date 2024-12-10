@@ -48,16 +48,20 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
-    ./Core/Src/platform.c
+    ./Core/Src/platforms/vl53l4cd_platform.c
+    ./Core/Src/platforms/lsm6ds3tr_platform.c
     ./Core/Src/tof.c
     ./Drivers/VL53L4CD_ULD_Driver/VL53L4CD_api.c
     ./Drivers/VL53L4CD_ULD_Driver/VL53L4CD_calibration.c
+    ./LSM6DS3TR-C/lsm6ds3tr-c_reg.c
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+    ./Core/Inc/platforms/
     ./Drivers/VL53L4CD_ULD_Driver/Inc
+    ./LSM6DS3TR-C/
 )
 
 # Add project symbols (macros)

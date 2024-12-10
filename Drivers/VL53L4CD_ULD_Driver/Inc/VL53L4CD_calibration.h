@@ -1,15 +1,14 @@
 /**
-  *
-  * Copyright (c) 2023 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-
+ *
+ * Copyright (c) 2023 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 
 /**
  * @file  vl53l4cd_calibration.h
@@ -19,7 +18,7 @@
 #ifndef VL53L4CD_CALIBRATION_H_
 #define VL53L4CD_CALIBRATION_H_
 
-#include "platform.h"
+#include "vl53l4cd_platform.h"
 
 /**
  * @brief This function can be used to perform an offset calibration. Offset
@@ -39,12 +38,9 @@
  * invalid nb of samples).
  */
 
-VL53L4CD_Error VL53L4CD_CalibrateOffset(
-		Dev_t dev,
-		int16_t TargetDistInMm,
-		int16_t *p_measured_offset_mm,
-		int16_t nb_samples);
-
+VL53L4CD_Error VL53L4CD_CalibrateOffset(Dev_t dev, int16_t TargetDistInMm,
+                                        int16_t *p_measured_offset_mm,
+                                        int16_t nb_samples);
 
 /**
  * @brief This function can be used to perform a Xtalk calibration. Xtalk
@@ -64,11 +60,9 @@ VL53L4CD_Error VL53L4CD_CalibrateOffset(
  * @return (VL53L4CD_ERROR) status : 0 if OK, or 255 if something occurred (e.g
  * invalid nb of samples).
  */
-   
-VL53L4CD_Error VL53L4CD_CalibrateXtalk(
-		Dev_t dev,
-		int16_t TargetDistInMm,
-		uint16_t *p_measured_xtalk_kcps,
-		int16_t nb_samples);
 
-#endif //VL53L4CD_CALIBRATION_H_
+VL53L4CD_Error VL53L4CD_CalibrateXtalk(Dev_t dev, int16_t TargetDistInMm,
+                                       uint16_t *p_measured_xtalk_kcps,
+                                       int16_t nb_samples);
+
+#endif // VL53L4CD_CALIBRATION_H_

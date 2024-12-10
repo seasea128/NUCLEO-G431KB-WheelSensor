@@ -10,8 +10,8 @@
  ******************************************************************************
  */
 
-#ifndef _PLATFORM_H_
-#define _PLATFORM_H_
+#ifndef VL53L4CD_PLATFORM
+#define VL53L4CD_PLATFORM
 #pragma once
 
 #include <stdint.h>
@@ -76,4 +76,4 @@ uint8_t VL53L4CD_WrDWord(Dev_t dev, uint16_t RegisterAdress, uint32_t value);
 
 uint8_t VL53L4CD_WaitMs(Dev_t dev, uint32_t TimeMs);
 
-#endif // _PLATFORM_H_
+#endif // VL53L4CD_PLATFORM
