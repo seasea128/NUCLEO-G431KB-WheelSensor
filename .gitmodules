@@ -1,0 +1,3 @@
+[submodule "LSM6DS3TR-C"]
+	path = LSM6DS3TR-C
+	url = https://github.com/STMicroelectronics/LSM6DS3TR-C-PID/
