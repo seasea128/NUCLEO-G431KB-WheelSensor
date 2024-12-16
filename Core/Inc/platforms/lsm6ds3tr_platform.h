@@ -5,9 +5,10 @@
 #include "stm32g4xx_hal.h"
 #include <stdint.h>
 
-typedef struct {
+typedef struct lsm6ds3tr_handle_s {
     uint8_t device_address;
     I2C_HandleTypeDef *i2c_handle;
+    float xl_calibration_val[3];
 } lsm6ds3tr_handle;
 
 /** Please note that is MANDATORY: return 0 -> no Error.**/
