@@ -186,6 +186,32 @@ void SysTick_Handler(void) {
 /******************************************************************************/
 
 /**
+ * @brief This function handles EXTI line0 interrupt.
+ */
+void EXTI0_IRQHandler(void) {
+    /* USER CODE BEGIN EXTI0_IRQn 0 */
+
+    /* USER CODE END EXTI0_IRQn 0 */
+    HAL_GPIO_EXTI_IRQHandler(INT1_LSM6DS3TR1_Pin);
+    /* USER CODE BEGIN EXTI0_IRQn 1 */
+
+    /* USER CODE END EXTI0_IRQn 1 */
+}
+
+/**
+ * @brief This function handles EXTI line1 interrupt.
+ */
+void EXTI1_IRQHandler(void) {
+    /* USER CODE BEGIN EXTI1_IRQn 0 */
+
+    /* USER CODE END EXTI1_IRQn 0 */
+    HAL_GPIO_EXTI_IRQHandler(INT2_LSM6DS3TR2_Pin);
+    /* USER CODE BEGIN EXTI1_IRQn 1 */
+
+    /* USER CODE END EXTI1_IRQn 1 */
+}
+
+/**
  * @brief This function handles FDCAN1 interrupt 0.
  */
 void FDCAN1_IT0_IRQHandler(void) {
@@ -224,6 +250,19 @@ void I2C1_EV_IRQHandler(void) {
     /* USER CODE BEGIN I2C1_EV_IRQn 1 */
 
     /* USER CODE END I2C1_EV_IRQn 1 */
+}
+
+/**
+ * @brief This function handles EXTI line[15:10] interrupts.
+ */
+void EXTI15_10_IRQHandler(void) {
+    /* USER CODE BEGIN EXTI15_10_IRQn 0 */
+
+    /* USER CODE END EXTI15_10_IRQn 0 */
+    HAL_GPIO_EXTI_IRQHandler(INT2_LSM6DS3TR2A10_Pin);
+    /* USER CODE BEGIN EXTI15_10_IRQn 1 */
+
+    /* USER CODE END EXTI15_10_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

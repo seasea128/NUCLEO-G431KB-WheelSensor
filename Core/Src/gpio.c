@@ -50,12 +50,12 @@ void MX_GPIO_Init(void) {
     /*Configure GPIO pin Output Level */
     HAL_GPIO_WritePin(GPIOB, XSHUT_VL53L4CD_Pin | LD2_Pin, GPIO_PIN_RESET);
 
-    /*Configure GPIO pins : INT1_LSM6DS3TR1_Pin INT2_LSM6DS3TR1_Pin
-     * INT1_LSM6DS3TR2_Pin INT2_LSM6DS3TR2_Pin */
-    GPIO_InitStruct.Pin = INT1_LSM6DS3TR1_Pin | INT2_LSM6DS3TR1_Pin |
-                          INT1_LSM6DS3TR2_Pin | INT2_LSM6DS3TR2_Pin;
+    /*Configure GPIO pins : INT1_LSM6DS3TR1_Pin INT2_LSM6DS3TR2_Pin
+     * INT1_LSM6DS3TR2_Pin INT2_LSM6DS3TR2A10_Pin */
+    GPIO_InitStruct.Pin = INT1_LSM6DS3TR1_Pin | INT2_LSM6DS3TR2_Pin |
+                          INT1_LSM6DS3TR2_Pin | INT2_LSM6DS3TR2A10_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     /*Configure GPIO pin : XSHUT_VL53L4CD_Pin */
@@ -79,8 +79,17 @@ void MX_GPIO_Init(void) {
     HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
     /* EXTI interrupt init*/
+    HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+    HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
     HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+    HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }
 
 /* USER CODE BEGIN 2 */
