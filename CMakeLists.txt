@@ -34,6 +34,9 @@ enable_language(C ASM)
 project(${CMAKE_PROJECT_NAME})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
+# Add linker flag for printing floats
+add_link_options("-u _printf_float")
+
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
 
