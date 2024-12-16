@@ -26,7 +26,13 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "VL53L4CD_api.h"
+#include "imu.h"
+#include "kalman_state.h"
+#include "lsm6ds3tr-c_reg.h"
+#include "lsm6ds3tr_platform.h"
 #include "tof.h"
+#include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 /* USER CODE END Includes */
 
@@ -48,9 +54,17 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-volatile uint8_t TOF_DATA_WAIT = 0;
+typedef struct int_flag_s {
+    bool TOF_INT, IMU_INT_1, IMU_INT_2 : 1;
+} int_flag;
+volatile int_flag INT_STATUS;
 VL53L4CD_ResultsData_t results;
 uint16_t tofResult;
+uint16_t imu1NotReadyCount;
+uint16_t imu2NotReadyCount;
+
+// TODO: Move this to local variable after testing
+kalman_state k_state;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -71,8 +85,23 @@ PUTCHAR_PROTOTYPE {
 /* USER CODE BEGIN 0 */
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-    if (GPIO_Pin == INT_VL53L4CD_Pin) {
-        TOF_DATA_WAIT++;
+    switch (GPIO_Pin) {
+    case INT_VL53L4CD_Pin: {
+        INT_STATUS.TOF_INT = true;
+        break;
+    }
+    case INT1_LSM6DS3TR1_Pin: {
+        INT_STATUS.IMU_INT_1 = true;
+        break;
+    }
+    case INT1_LSM6DS3TR2_Pin: {
+        INT_STATUS.IMU_INT_2 = true;
+        break;
+    }
+    default: {
+        printf("Unk int hit: %x\r\n", GPIO_Pin);
+        break;
+    }
     }
 }
 
@@ -156,13 +185,57 @@ int main(void) {
     header.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
     header.MessageMarker = 0;
 
+    lsm6ds3tr_handle handle1 = {.i2c_handle = &hi2c1,
+                                .device_address = LSM6DS3TR_C_I2C_ADD_L};
+
+    lsm6ds3tr_handle handle2 = {.i2c_handle = &hi2c1,
+                                .device_address = LSM6DS3TR_C_I2C_ADD_H};
+
+    // According to docs, LSM6DS3TR-C needs 15ms to startup, should be good
+    // enough to just wait 15ms before setup.
+    HAL_Delay(150);
+
+    printf("Setting up IMU1\r\n");
+    stmdev_ctx_t imu1 = IMU_Setup(&handle1);
+    if (imu1.handle == 0) {
+        // TODO: More logging
+        return 127;
+    }
+    // printf("Calibrating IMU1\r\n");
+    // status = IMU_Calibrate(&imu1);
+    // if (status != HAL_OK) {
+    //     printf("Failed to calibrate IMU1: %d\r\n", status);
+    //     return -123;
+    // }
+
+    printf("Setting up IMU2\r\n");
+    stmdev_ctx_t imu2 = IMU_Setup(&handle2);
+    if (imu2.handle == 0) {
+        // TODO: More logging
+        return 127;
+    }
+    // printf("Calibrating IMU2\r\n");
+    // status = IMU_Calibrate(&imu2);
+    // if (status != HAL_OK) {
+    //     printf("Failed to calibrate IMU2: %d\r\n", status);
+    //     return -123;
+    // }
+
+    k_state = kalman_state_init();
+
+    k_state.tof_distance = 10;
+    k_state.current_accel_orthogonal = 0.f;
+
+    imu1NotReadyCount = 0;
+    imu2NotReadyCount = 0;
+
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1) {
-        if (TOF_DATA_WAIT > 0) {
-            TOF_DATA_WAIT = 0;
+        if (INT_STATUS.TOF_INT) {
+            INT_STATUS.TOF_INT = false;
             int status = VL53L4CD_GetResult(TOF_ADDRESS, &results);
             if (status) {
                 printf("Cannot get result from VL53L4CD: %x\r\n", status);
@@ -170,15 +243,15 @@ int main(void) {
             }
             if (results.range_status == 0) {
                 tofResult = results.distance_mm;
-                printf(
-                    "Status = %3u, Distance = %5u mm, Hex = %x, Signal = %6u "
-                    "kcps/spad, Sigma = %6u mm\r\n",
-                    results.range_status, tofResult, tofResult,
-                    results.signal_per_spad_kcps, results.sigma_mm);
+                // printf(
+                //     "Status = %3u, Distance = %5u mm, Hex = %x, Signal = %6u
+                //     " "kcps/spad, Sigma = %6u mm\r\n", results.range_status,
+                //     tofResult, tofResult, results.signal_per_spad_kcps,
+                //     results.sigma_mm);
                 int status = HAL_FDCAN_AddMessageToTxFifoQ(
                     &hfdcan1, &header, (uint8_t *)(&tofResult));
 
-                if (status != HAL_OK) {
+                if (status != HAL_OK && status != 1) {
                     printf("Cannot add message to FDCAN: %x\r\n", status);
                     status = VL53L4CD_ClearInterrupt(TOF_ADDRESS);
                     if (status) {
@@ -192,6 +265,44 @@ int main(void) {
             if (status) {
                 printf("Cannot clear interrupt from VL53L4CD: %x\r\n", status);
                 continue;
+            }
+
+            k_state.tof_distance = tofResult;
+            k_state.tof_error = results.sigma_mm;
+            k_state.estimated_distance = k_state.tof_distance;
+        } else if (INT_STATUS.IMU_INT_1) {
+            // TODO: Implement 1D Kalman Filter to fuse IMU with ToF
+            INT_STATUS.IMU_INT_1 = false;
+
+            int result = IMU_GetAccel(&imu1, k_state.imu1_results);
+            if (result != HAL_OK && result != -23) {
+                printf("Failed to get result from IMU1: %d\r\n", result);
+            } else if (result == -23) {
+                imu1NotReadyCount++;
+            } else {
+                imu1NotReadyCount = 0;
+                //  printf("TOF Result retrieved: %x,%x,%x\r\n",
+                //         *(unsigned int *)&k_state.imu1_results[0],
+                //         *(unsigned int *)&k_state.imu1_results[1],
+                //         *(unsigned int *)&k_state.imu1_results[2]);
+            }
+        } else if (INT_STATUS.IMU_INT_2) {
+            INT_STATUS.IMU_INT_2 = false;
+
+            int result = IMU_GetAccel(&imu2, k_state.imu2_results);
+            if (result != HAL_OK && result != -23) {
+                printf("Failed to get result from IMU2: %d\r\n", result);
+            } else if (result == 23) {
+                imu2NotReadyCount++;
+            } else {
+                imu2NotReadyCount = 0;
+                // printf("TOF Result retrieved: %x,%x,%x\r\n",
+                //        *(unsigned int *)&k_state.imu2_results[0],
+                //        *(unsigned int *)&k_state.imu2_results[1],
+                //        *(unsigned int *)&k_state.imu2_results[2]);
+
+                kalman_update_accel(&k_state);
+                kalman_predict_next(&k_state);
             }
         }
         /* USER CODE END WHILE */
@@ -262,6 +373,7 @@ void Error_Handler(void) {
      * state
      */
     __disable_irq();
+    printf("Error occured\r\n");
     while (1) {
     }
     /* USER CODE END Error_Handler_Debug */
