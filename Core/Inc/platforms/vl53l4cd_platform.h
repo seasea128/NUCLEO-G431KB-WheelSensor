@@ -14,6 +14,8 @@
 #define VL53L4CD_PLATFORM
 #pragma once
 
+#define VL53L4CD_I2C_FAST_MODE_PLUS
+
 #include <stdint.h>
 // #include <string.h>
 
