@@ -58,14 +58,14 @@ target_sources(
           ./Core/Src/kalman_state.c
           ./Drivers/VL53L4CD_ULD_Driver/VL53L4CD_api.c
           ./Drivers/VL53L4CD_ULD_Driver/VL53L4CD_calibration.c
-          ./LSM6DS3TR-C/lsm6ds3tr-c_reg.c)
+          ./Drivers/LSM6DS3TR-C/lsm6ds3tr-c_reg.c)
 
 # Add include paths
 target_include_directories(
   ${CMAKE_PROJECT_NAME}
   PRIVATE # Add user defined include paths
           ./Core/Inc/platforms/ ./Drivers/VL53L4CD_ULD_Driver/Inc
-          ./LSM6DS3TR-C/)
+          ./Drivers/LSM6DS3TR-C/)
 
 # Add project symbols (macros)
 target_compile_definitions(
