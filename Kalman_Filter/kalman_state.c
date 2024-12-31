@@ -1,18 +1,22 @@
 #include "kalman_state.h"
 #include <math.h>
 
-#define DELTA_TIME 1 / 416.f
-
 kalman_state kalman_state_init(void) {
     return (kalman_state){
-        .tof_error = 0,
-        .tof_distance = 0,
-        .current_accel_orthogonal = 0.f,
-        .current_vel = 0.f,
-        .estimated_distance = 0.f,
         .imu1_results = {0, 0, 0},
         .imu2_results = {0, 0, 0},
         .imu_diff_results = {0, 0, 0},
+
+        .imu1_mag = 0.f,
+        .imu2_mag = 0.f,
+
+        .current_accel_orthogonal = 0.f,
+        .current_vel = 0.f,
+
+        .tof_error = 0,
+        .tof_distance = 0,
+        .estimated_distance = 0.f,
+        .estimated_delta = 0.f,
     };
 }
 
@@ -35,14 +39,18 @@ void kalman_update_accel(kalman_state *state) {
     state->imu2_mag_sqrt = sqrt(state->imu2_mag);
 
     state->current_accel_orthogonal =
-        state->imu2_mag_sqrt - state->imu1_mag_sqrt - 1000;
+        state->imu2_mag_sqrt - state->imu1_mag_sqrt;
     state->current_vel += state->current_accel_orthogonal * DELTA_TIME;
 }
 
 void kalman_predict_next(kalman_state *state) {
-    if (state->current_vel > 10)
+    if (state->current_vel > 10) {
+        state->estimated_delta =
+            state->estimated_delta + DELTA_TIME * state->current_vel;
         state->estimated_distance =
-            state->tof_distance + DELTA_TIME * state->current_vel;
-    else
+            state->tof_distance + state->estimated_delta;
+    } else {
         state->estimated_distance = state->tof_distance;
+        state->estimated_delta = 0;
+    }
 }

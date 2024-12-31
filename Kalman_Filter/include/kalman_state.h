@@ -2,6 +2,7 @@
 #define KALMAN_STATE
 
 #include <stdint.h>
+#define DELTA_TIME 1 / 416.f
 
 typedef struct kalman_state_s {
     float imu1_results[3];
@@ -20,6 +21,7 @@ typedef struct kalman_state_s {
     uint16_t tof_distance;
     uint16_t tof_error;
     float estimated_distance;
+    float estimated_delta;
 } kalman_state;
 
 kalman_state kalman_state_init(void);
