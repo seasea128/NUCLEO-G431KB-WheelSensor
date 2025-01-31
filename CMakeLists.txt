@@ -7,6 +7,9 @@ cmake_minimum_required(VERSION 3.22)
 # User is free to modify the file as much as necessary
 #
 
+option(MAIN_LTO "Enable LTO on main application" OFF)
+option(MAIN_GC_SECTIONS "Enable GC sections on main application (Remove unused code)" OFF)
+
 include(FetchContent)
 
 # Fetch drivers if needed
@@ -43,8 +46,16 @@ enable_language(C ASM)
 project(${CMAKE_PROJECT_NAME})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
+if(MAIN_LTO) 
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
 # Add linker flag for printing floats
-add_link_options("-u _printf_float")
+add_link_options(-u _printf_float)
+
+if(MAIN_GC_SECTIONS)
+  add_link_options(-Wl,--gc-sections)
+endif()
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
@@ -87,7 +98,8 @@ target_compile_definitions(
 # Add linked libraries
 target_link_libraries(
   ${CMAKE_PROJECT_NAME} stm32cubemx # Add user defined libraries
-  Kalman_Filter)
+  Kalman_Filter
+)
 
 add_custom_command(
   TARGET ${CMAKE_PROJECT_NAME}
