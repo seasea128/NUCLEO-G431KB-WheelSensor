@@ -31,7 +31,6 @@
 #include "lsm6ds3tr-c_reg.h"
 #include "lsm6ds3tr_platform.h"
 #include "tof.h"
-#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 /* USER CODE END Includes */
