@@ -13,7 +13,9 @@ project(
 
 include(CTest)
 
-if(BUILD_TESTING)
+option(KALMAN_BUILD_TEST "Build tests for kalman filter library" OFF)
+
+if(KALMAN_BUILD_TEST)
   add_subdirectory(tests)
   add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 endif()
