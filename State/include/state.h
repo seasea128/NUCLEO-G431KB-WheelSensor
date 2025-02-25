@@ -4,7 +4,7 @@
 #include <stdint.h>
 #define DELTA_TIME 1 / 416.f
 
-typedef struct kalman_state_s {
+typedef struct state_s {
     float imu1_results[3];
     float imu2_results[3];
     float imu_diff_results[3];
@@ -22,12 +22,14 @@ typedef struct kalman_state_s {
     uint16_t tof_error;
     float estimated_distance;
     float estimated_delta;
-} kalman_state;
+} state;
 
-kalman_state kalman_state_init(void);
+state state_init(void);
 
-void kalman_update_accel(kalman_state *state);
+void state_update_accel(state *state);
 
-void kalman_predict_next(kalman_state *state);
+void state_predict_next(state *state);
+
+void state_update_vel(state *state, uint16_t velocity, uint16_t error);
 
 #endif

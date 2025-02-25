@@ -27,9 +27,9 @@
 /* USER CODE BEGIN Includes */
 #include "VL53L4CD_api.h"
 #include "imu.h"
-#include "kalman_state.h"
 #include "lsm6ds3tr-c_reg.h"
 #include "lsm6ds3tr_platform.h"
+#include "state.h"
 #include "tof.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -63,7 +63,7 @@ uint16_t imu1NotReadyCount;
 uint16_t imu2NotReadyCount;
 
 // TODO: Move this to local variable after testing
-kalman_state k_state;
+state current_state;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -174,7 +174,7 @@ int main(void) {
 
     // FDCAN header
     FDCAN_TxHeaderTypeDef header;
-    header.Identifier = 0x1;
+    header.Identifier = SENSOR_ID;
     header.IdType = FDCAN_STANDARD_ID;
     header.TxFrameType = FDCAN_FRAME_FD_NO_BRS;
     header.DataLength = FDCAN_DLC_BYTES_2;
@@ -194,36 +194,36 @@ int main(void) {
     // enough to just wait 15ms before setup.
     HAL_Delay(150);
 
-    printf("Setting up IMU1\r\n");
+    // printf("Setting up IMU1\r\n");
     stmdev_ctx_t imu1 = IMU_Setup(&handle1);
-    if (imu1.handle == 0) {
-        // TODO: More logging
-        return 127;
-    }
-    // printf("Calibrating IMU1\r\n");
-    // status = IMU_Calibrate(&imu1);
-    // if (status != HAL_OK) {
-    //     printf("Failed to calibrate IMU1: %d\r\n", status);
-    //     return -123;
+    // if (imu1.handle == 0) {
+    //     // TODO: More logging
+    //     return 127;
     // }
+    //  printf("Calibrating IMU1\r\n");
+    //  status = IMU_Calibrate(&imu1);
+    //  if (status != HAL_OK) {
+    //      printf("Failed to calibrate IMU1: %d\r\n", status);
+    //      return -123;
+    //  }
 
-    printf("Setting up IMU2\r\n");
+    // printf("Setting up IMU2\r\n");
     stmdev_ctx_t imu2 = IMU_Setup(&handle2);
-    if (imu2.handle == 0) {
-        // TODO: More logging
-        return 127;
-    }
-    // printf("Calibrating IMU2\r\n");
-    // status = IMU_Calibrate(&imu2);
-    // if (status != HAL_OK) {
-    //     printf("Failed to calibrate IMU2: %d\r\n", status);
-    //     return -123;
+    // if (imu2.handle == 0) {
+    //     // TODO: More logging
+    //     return 127;
     // }
+    //  printf("Calibrating IMU2\r\n");
+    //  status = IMU_Calibrate(&imu2);
+    //  if (status != HAL_OK) {
+    //      printf("Failed to calibrate IMU2: %d\r\n", status);
+    //      return -123;
+    //  }
 
-    k_state = kalman_state_init();
+    current_state = state_init();
 
-    k_state.tof_distance = 10;
-    k_state.current_accel_orthogonal = 0.f;
+    current_state.tof_distance = 10;
+    current_state.current_accel_orthogonal = 0.f;
 
     imu1NotReadyCount = 0;
     imu2NotReadyCount = 0;
@@ -242,11 +242,8 @@ int main(void) {
             }
             if (results.range_status == 0) {
                 tofResult = results.distance_mm;
-                // printf(
-                //     "Status = %3u, Distance = %5u mm, Hex = %x, Signal = %6u
-                //     " "kcps/spad, Sigma = %6u mm\r\n", results.range_status,
-                //     tofResult, tofResult, results.signal_per_spad_kcps,
-                //     results.sigma_mm);
+                printf("TOF result got: %d\r\n", tofResult);
+                printf("Sending new CAN message\r\n");
                 int status = HAL_FDCAN_AddMessageToTxFifoQ(
                     &hfdcan1, &header, (uint8_t *)(&tofResult));
 
@@ -266,42 +263,40 @@ int main(void) {
                 continue;
             }
 
-            k_state.tof_distance = tofResult;
-            k_state.tof_error = results.sigma_mm;
-            k_state.estimated_distance = k_state.tof_distance;
+            state_update_vel(&current_state, tofResult, results.sigma_mm);
         } else if (INT_STATUS.IMU_INT_1) {
-            // TODO: Implement 1D Kalman Filter to fuse IMU with ToF
+            // TODO: Implement 1D state Filter to fuse IMU with ToF
             INT_STATUS.IMU_INT_1 = false;
 
-            int result = IMU_GetAccel(&imu1, k_state.imu1_results);
+            int result = IMU_GetAccel(&imu1, current_state.imu1_results);
             if (result != HAL_OK && result != -23) {
                 printf("Failed to get result from IMU1: %d\r\n", result);
             } else if (result == -23) {
                 imu1NotReadyCount++;
             } else {
                 imu1NotReadyCount = 0;
-                //  printf("TOF Result retrieved: %x,%x,%x\r\n",
-                //         *(unsigned int *)&k_state.imu1_results[0],
-                //         *(unsigned int *)&k_state.imu1_results[1],
-                //         *(unsigned int *)&k_state.imu1_results[2]);
+                printf("IMU1 Result retrieved: %x,%x,%x\r\n",
+                       *(unsigned int *)&current_state.imu1_results[0],
+                       *(unsigned int *)&current_state.imu1_results[1],
+                       *(unsigned int *)&current_state.imu1_results[2]);
             }
         } else if (INT_STATUS.IMU_INT_2) {
             INT_STATUS.IMU_INT_2 = false;
 
-            int result = IMU_GetAccel(&imu2, k_state.imu2_results);
+            int result = IMU_GetAccel(&imu2, current_state.imu2_results);
             if (result != HAL_OK && result != -23) {
                 printf("Failed to get result from IMU2: %d\r\n", result);
             } else if (result == 23) {
                 imu2NotReadyCount++;
             } else {
                 imu2NotReadyCount = 0;
-                // printf("TOF Result retrieved: %x,%x,%x\r\n",
-                //        *(unsigned int *)&k_state.imu2_results[0],
-                //        *(unsigned int *)&k_state.imu2_results[1],
-                //        *(unsigned int *)&k_state.imu2_results[2]);
+                printf("IMU2 Result retrieved: %x,%x,%x\r\n",
+                       *(unsigned int *)&current_state.imu2_results[0],
+                       *(unsigned int *)&current_state.imu2_results[1],
+                       *(unsigned int *)&current_state.imu2_results[2]);
 
-                kalman_update_accel(&k_state);
-                kalman_predict_next(&k_state);
+                state_update_accel(&current_state);
+                state_predict_next(&current_state);
             }
         }
         /* USER CODE END WHILE */

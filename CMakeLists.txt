@@ -8,7 +8,8 @@ cmake_minimum_required(VERSION 3.22)
 #
 
 option(MAIN_LTO "Enable LTO on main application" OFF)
-option(MAIN_GC_SECTIONS "Enable GC sections on main application (Remove unused code)" OFF)
+option(MAIN_GC_SECTIONS "Enable GC sections on main application (Remove unused code)" ON)
+set(SensorID "0x1" CACHE STRING "Sensor ID in hex")
 
 include(FetchContent)
 
@@ -64,7 +65,7 @@ add_executable(${CMAKE_PROJECT_NAME})
 add_subdirectory(cmake/stm32cubemx)
 
 # Add kalman fitler
-add_subdirectory(Kalman_Filter)
+add_subdirectory(State)
 
 # Link directories setup
 target_link_directories(
@@ -98,8 +99,10 @@ target_compile_definitions(
 # Add linked libraries
 target_link_libraries(
   ${CMAKE_PROJECT_NAME} stm32cubemx # Add user defined libraries
-  Kalman_Filter
+  State
 )
+
+target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE SENSOR_ID=${SensorID})
 
 add_custom_command(
   TARGET ${CMAKE_PROJECT_NAME}

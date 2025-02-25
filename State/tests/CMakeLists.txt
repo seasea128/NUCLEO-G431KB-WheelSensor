@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Kalman_Filter_Test LANGUAGES C)
+project(State_Test LANGUAGES C)
 
 include(CTest)
 
@@ -15,6 +15,6 @@ add_executable(test1)
 
 target_sources(test1 PRIVATE test1.c)
 
-target_link_libraries(test1 Kalman_Filter unity)
+target_link_libraries(test1 State unity)
 
 add_test(test1_test test1)

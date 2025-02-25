@@ -7,23 +7,24 @@ set(CMAKE_C_EXTENSIONS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
 project(
-  Kalman_Filter
+  State 
   VERSION 1.0
   LANGUAGES C)
 
 include(CTest)
 
-option(KALMAN_BUILD_TEST "Build tests for kalman filter library" OFF)
+option(STATE_BUILD_TEST "Build tests for state library" OFF)
 
-if(KALMAN_BUILD_TEST)
+if(STATE_BUILD_TEST)
   add_subdirectory(tests)
   add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 endif()
 
-add_library(Kalman_Filter STATIC)
+add_library(State STATIC)
 
-target_sources(Kalman_Filter PRIVATE kalman_state.c)
+target_sources(State PRIVATE state.c)
 
-target_link_libraries(Kalman_Filter m)
+# Link with math library
+target_link_libraries(State m)
 
-target_include_directories(Kalman_Filter PUBLIC ./include/)
+target_include_directories(State PUBLIC ./include/)

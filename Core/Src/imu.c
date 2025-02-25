@@ -16,7 +16,7 @@ stmdev_ctx_t IMU_Setup(lsm6ds3tr_handle *handle) {
     result = lsm6ds3tr_c_device_id_get(&imu_ctx, &device_id);
     if (result != HAL_OK) {
         // TODO: Handle error
-        printf("Failed to get device ID: %d\r\n", result);
+        printf("IMU: Failed to get device ID: %d\r\n", result);
         return (stmdev_ctx_t){.handle = 0};
     }
 
