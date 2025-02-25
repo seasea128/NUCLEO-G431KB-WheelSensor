@@ -31,6 +31,7 @@
 #include "lsm6ds3tr_platform.h"
 #include "state.h"
 #include "tof.h"
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 /* USER CODE END Includes */
@@ -61,7 +62,8 @@ VL53L4CD_ResultsData_t results;
 uint16_t tofResult;
 uint16_t imu1NotReadyCount;
 uint16_t imu2NotReadyCount;
-
+uint16_t counter;
+uint16_t sin_value;
 // TODO: Move this to local variable after testing
 state current_state;
 /* USER CODE END PV */
@@ -83,34 +85,7 @@ PUTCHAR_PROTOTYPE {
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-    switch (GPIO_Pin) {
-    case INT_VL53L4CD_Pin: {
-        INT_STATUS.TOF_INT = true;
-        break;
-    }
-    case INT1_LSM6DS3TR1_Pin: {
-        INT_STATUS.IMU_INT_1 = true;
-        break;
-    }
-    case INT1_LSM6DS3TR2_Pin: {
-        INT_STATUS.IMU_INT_2 = true;
-        break;
-    }
-    case INT2_LSM6DS3TR1_Pin: {
-        printf("INT2 IMU1 hit\r\n");
-        break;
-    }
-    case INT2_LSM6DS3TR2_Pin: {
-        printf("INT2 IMU2 hit\r\n");
-        break;
-    }
-    default: {
-        printf("Unk int hit: %x\r\n", GPIO_Pin);
-        break;
-    }
-    }
-}
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {}
 
 /* USER CODE END 0 */
 
@@ -159,27 +134,6 @@ int main(void) {
 
     printf("Serial initialized\r\n");
 
-    status = TOF_Setup(TOF_ADDRESS);
-
-    if (status) {
-        printf("Cannot setup VL53L4CD: %x\r\n", status);
-        return status;
-    }
-
-    status = VL53L4CD_SetRangeTiming(TOF_ADDRESS, 10, 0);
-
-    if (status) {
-        printf("Cannot set range of VL53L4CD: %x\r\n", status);
-        return status;
-    }
-
-    status = VL53L4CD_StartRanging(TOF_ADDRESS);
-
-    if (status) {
-        printf("Cannot start ranging of VL53L4CD: %x\r\n", status);
-        return status;
-    }
-
     // FDCAN header
     FDCAN_TxHeaderTypeDef header;
     header.Identifier = SENSOR_ID;
@@ -191,138 +145,28 @@ int main(void) {
     header.FDFormat = FDCAN_CLASSIC_CAN;
     header.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
     header.MessageMarker = 0;
-
-    lsm6ds3tr_handle handle1 = {.i2c_handle = &hi2c1,
-                                .device_address = LSM6DS3TR_C_I2C_ADD_L};
-
-    lsm6ds3tr_handle handle2 = {.i2c_handle = &hi2c1,
-                                .device_address = LSM6DS3TR_C_I2C_ADD_H};
-
-    // According to docs, LSM6DS3TR-C needs 15ms to startup, should be good
-    // enough to just wait 15ms before setup.
-    HAL_Delay(150);
-
-    // printf("Setting up IMU1\r\n");
-    stmdev_ctx_t imu1 = IMU_Setup(&handle1);
-    if (imu1.handle == 0) {
-        // TODO: More logging
-        return 127;
-    }
-    printf("Calibrating IMU1\r\n");
-    // status = IMU_Calibrate(&imu1);
-    // if (status != HAL_OK) {
-    //     printf("Failed to calibrate IMU1: %d\r\n", status);
-    //     return -123;
-    // }
-
-    status = IMU_SetInterrupt(&imu1);
-    if (status != HAL_OK) {
-        printf("Failed to set interrupt on IMU1: %d\r\n", status);
-        return -124;
-    }
-
-    // printf("Setting up IMU2\r\n");
-    stmdev_ctx_t imu2 = IMU_Setup(&handle2);
-    // if (imu2.handle == 0) {
-    //     // TODO: More logging
-    //     return 127;
-    // }
-    //  printf("Calibrating IMU2\r\n");
-    //  status = IMU_Calibrate(&imu2);
-    //  if (status != HAL_OK) {
-    //      printf("Failed to calibrate IMU2: %d\r\n", status);
-    //      return -123;
-    //  }
-
-    current_state = state_init();
-
-    current_state.tof_distance = 10;
-    current_state.current_accel_orthogonal = 0.f;
-
-    imu1NotReadyCount = 0;
-    imu2NotReadyCount = 0;
-
+    counter = 0;
     /* USER CODE END 2 */
-
+    double b = 2 * M_PI * (FREQUENCY / (double)1000);
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1) {
-        if (INT_STATUS.TOF_INT) {
-            INT_STATUS.TOF_INT = false;
-            int status = VL53L4CD_GetResult(TOF_ADDRESS, &results);
-            if (status) {
-                printf("Cannot get result from VL53L4CD: %x\r\n", status);
-                continue;
-            }
-            if (results.range_status == 0) {
-                tofResult = results.distance_mm;
-                // printf("TOF result got: %d\r\n", tofResult);
-                //  printf("Sending new CAN message\r\n");
-                int status = HAL_FDCAN_AddMessageToTxFifoQ(
-                    &hfdcan1, &header, (uint8_t *)(&tofResult));
-
-                if (status != HAL_OK && status != 1) {
-                    printf("Cannot add message to FDCAN: %x\r\n", status);
-                    status = VL53L4CD_ClearInterrupt(TOF_ADDRESS);
-                    if (status) {
-                        printf("Cannot clear interrupt from VL53L4CD: %x\r\n",
-                               status);
-                        continue;
-                    }
-                }
-            }
-            status = VL53L4CD_ClearInterrupt(TOF_ADDRESS);
-            if (status) {
-                printf("Cannot clear interrupt from VL53L4CD: %x\r\n", status);
-                continue;
-            }
-
-            state_update_displacement(&current_state, tofResult,
-                                      results.sigma_mm);
-        } else if (INT_STATUS.IMU_INT_1) {
-            // TODO: Implement 1D state Filter to fuse IMU with ToF
-            INT_STATUS.IMU_INT_1 = false;
-
-            int result = IMU_GetAccel(&imu1, current_state.imu1_results);
-            if (result != HAL_OK && result != -23) {
-                printf("Failed to get result from IMU1: %d\r\n", result);
-            } else if (result == -23) {
-                imu1NotReadyCount++;
-            } else {
-                imu1NotReadyCount = 0;
-                // printf("IMU1 Result retrieved: %f,%f,%f\r\n",
-                //        current_state.imu1_results[0],
-                //        current_state.imu1_results[1],
-                //        current_state.imu1_results[2]);
-                state_update_accel(&current_state);
-            }
-        } else if (INT_STATUS.IMU_INT_2) {
-            INT_STATUS.IMU_INT_2 = false;
-
-            int result = IMU_GetAccel(&imu2, current_state.imu2_results);
-            if (result != HAL_OK && result != -23) {
-                printf("Failed to get result from IMU2: %d\r\n", result);
-            } else if (result == -23) {
-                imu2NotReadyCount++;
-            } else {
-                imu2NotReadyCount = 0;
-                printf("IMU2 Result retrieved: %x,%x,%x\r\n",
-                       *(unsigned int *)&current_state.imu2_results[0],
-                       *(unsigned int *)&current_state.imu2_results[1],
-                       *(unsigned int *)&current_state.imu2_results[2]);
-
-                state_update_accel(&current_state);
-                state_predict_next(&current_state);
-            }
+        if (counter > 100) {
+            counter = 0;
         }
+        sin_value = (uint16_t)500 * sin(b * counter) + 1500;
+        printf("Sin value: %d\r\n", sin_value);
+        counter++;
+
+        int result = HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &header,
+                                                   (uint8_t *)&sin_value);
+        if (result != HAL_OK) {
+            printf("Cannot send CAN message: %d", result);
+        }
+        HAL_Delay(1);
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-    }
-    status = VL53L4CD_StopRanging(TOF_ADDRESS);
-    if (status) {
-        printf("Cannot stop ranging VL53L4CD: %x\r\n", status);
-        return status;
     }
     /* USER CODE END 3 */
 }

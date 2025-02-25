@@ -10,6 +10,7 @@ cmake_minimum_required(VERSION 3.22)
 option(MAIN_LTO "Enable LTO on main application" OFF)
 option(MAIN_GC_SECTIONS "Enable GC sections on main application (Remove unused code)" ON)
 set(SensorID "0x1" CACHE STRING "Sensor ID in hex")
+set(Frequency "20" CACHE STRING "Frequency in double")
 
 include(FetchContent)
 
@@ -103,6 +104,7 @@ target_link_libraries(
 )
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE SENSOR_ID=${SensorID})
+target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE FREQUENCY=${Frequency})
 
 add_custom_command(
   TARGET ${CMAKE_PROJECT_NAME}
