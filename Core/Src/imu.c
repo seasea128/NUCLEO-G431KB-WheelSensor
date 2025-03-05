@@ -16,7 +16,7 @@ stmdev_ctx_t IMU_Setup(lsm6ds3tr_handle *handle) {
     result = lsm6ds3tr_c_device_id_get(&imu_ctx, &device_id);
     if (result != HAL_OK) {
         // TODO: Handle error
-        printf("IMU: Failed to get device ID: %d\r\n", result);
+        printf("IMU: Failed to get device ID: %ld\r\n", result);
         return (stmdev_ctx_t){.handle = 0};
     }
 
@@ -97,7 +97,7 @@ stmdev_ctx_t IMU_Setup(lsm6ds3tr_handle *handle) {
         int16_t data[3];
         int result = lsm6ds3tr_c_acceleration_raw_get(&imu_ctx, data);
         if (result != HAL_OK) {
-            printf("Failed to retrieve initial data: %ld\r\n", result);
+            printf("Failed to retrieve initial data: %d\r\n", result);
             return (stmdev_ctx_t){.handle = 0};
         }
     }
@@ -183,7 +183,7 @@ int32_t IMU_Calibrate(stmdev_ctx_t *imu_dev) {
     return 0;
 }
 
-int32_t IMU_GetAccel(stmdev_ctx_t *imu_dev, float_t *results) {
+int32_t IMU_GetAccel(stmdev_ctx_t *imu_dev, float *results) {
     lsm6ds3tr_c_reg_t reg;
     lsm6ds3tr_c_status_reg_get(imu_dev, &reg.status_reg);
     if (!reg.status_reg.xlda) {
@@ -195,13 +195,13 @@ int32_t IMU_GetAccel(stmdev_ctx_t *imu_dev, float_t *results) {
         return result;
     }
 
-    lsm6ds3tr_handle *handle = (lsm6ds3tr_handle *)imu_dev->handle;
+    // lsm6ds3tr_handle *handle = (lsm6ds3tr_handle *)imu_dev->handle;
 
     // Results unit is in milli G, 1G is equal to 9.81 m/s
     // Conversion factor -> 9.81/1000
     for (int i = 0; i < 3; i++) {
-        results[i] = (lsm6ds3tr_c_from_fs16g_to_mg(data[i]) -
-                      handle->xl_calibration_val[i]);
+        results[i] = lsm6ds3tr_c_from_fs4g_to_mg(data[i]);
+        //- handle->xl_calibration_val[i];
     }
 
     return 0;

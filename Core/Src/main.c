@@ -145,9 +145,10 @@ int main(void) {
     header.FDFormat = FDCAN_CLASSIC_CAN;
     header.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
     header.MessageMarker = 0;
+
     counter = 0;
     /* USER CODE END 2 */
-    double b = 2 * M_PI * (FREQUENCY / (double)1000);
+    double b = 2 * M_PI * (FREQUENCY / (double)100);
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1) {
@@ -163,7 +164,7 @@ int main(void) {
         if (result != HAL_OK) {
             printf("Cannot send CAN message: %d", result);
         }
-        HAL_Delay(1);
+        HAL_Delay(10);
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
