@@ -84,6 +84,27 @@ stmdev_ctx_t IMU_Setup(lsm6ds3tr_handle *handle) {
     }
 
     result =
+        lsm6ds3tr_c_pin_int2_route_set(&imu_ctx, (lsm6ds3tr_c_int2_route_t){
+                                                     .int2_drdy_xl = 0,
+                                                     .int2_drdy_g = 0,
+                                                     .int2_drdy_temp = 0,
+                                                     .int2_fth = 0,
+                                                     .int2_fifo_ovr = 0,
+                                                     .int2_full_flag = 0,
+                                                     .int2_step_count_ov = 0,
+                                                     .int2_step_delta = 0,
+                                                     .int2_iron = 0,
+                                                     .int2_tilt = 0,
+                                                     .int2_6d = 0,
+                                                     .int2_double_tap = 0,
+                                                     .int2_ff = 0,
+                                                     .int2_wu = 0,
+                                                     .int2_single_tap = 0,
+                                                     .int2_inact_state = 0,
+                                                     .int2_wrist_tilt = 0,
+                                                 });
+
+    result =
         lsm6ds3tr_c_pin_int1_route_set(&imu_ctx, (lsm6ds3tr_c_int1_route_t){
                                                      .int1_drdy_xl = 1,
                                                      .int1_drdy_g = 0,
