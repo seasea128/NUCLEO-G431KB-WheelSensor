@@ -423,29 +423,25 @@ VL53L4CD_Error VL53L4CD_GetResult(Dev_t dev, VL53L4CD_ResultsData_t *p_result) {
     }
     p_result->range_status = temp_8;
 
-    // status |= VL53L4CD_RdWord(dev, VL53L4CD_RESULT__SPAD_NB,
-    //	&temp_16);
-    // p_result->number_of_spad = temp_16 / (uint16_t) 256;
+    // status |= VL53L4CD_RdWord(dev, VL53L4CD_RESULT__SPAD_NB, &temp_16);
+    // p_result->number_of_spad = temp_16 / (uint16_t)256;
 
-    // status |= VL53L4CD_RdWord(dev, VL53L4CD_RESULT__SIGNAL_RATE,
-    //	&temp_16);
-    // p_result->signal_rate_kcps = temp_16 * (uint16_t) 8;
+    // status |= VL53L4CD_RdWord(dev, VL53L4CD_RESULT__SIGNAL_RATE, &temp_16);
+    // p_result->signal_rate_kcps = temp_16 * (uint16_t)8;
 
-    // status |= VL53L4CD_RdWord(dev, VL53L4CD_RESULT__AMBIENT_RATE,
-    //	&temp_16);
-    // p_result->ambient_rate_kcps = temp_16 * (uint16_t) 8;
+    // status |= VL53L4CD_RdWord(dev, VL53L4CD_RESULT__AMBIENT_RATE, &temp_16);
+    // p_result->ambient_rate_kcps = temp_16 * (uint16_t)8;
 
-    // status |= VL53L4CD_RdWord(dev, VL53L4CD_RESULT__SIGMA,
-    //	&temp_16);
-    // p_result->sigma_mm = temp_16 / (uint16_t) 4;
+    status |= VL53L4CD_RdWord(dev, VL53L4CD_RESULT__SIGMA, &temp_16);
+    p_result->sigma_mm = temp_16 / (uint16_t)4;
 
     status |= VL53L4CD_RdWord(dev, VL53L4CD_RESULT__DISTANCE, &temp_16);
     p_result->distance_mm = temp_16;
 
-    // p_result->signal_per_spad_kcps = p_result->signal_rate_kcps
-    //		/p_result->number_of_spad;
-    // p_result->ambient_per_spad_kcps = p_result->ambient_rate_kcps
-    //		/p_result->number_of_spad;
+    // p_result->signal_per_spad_kcps =
+    //     p_result->signal_rate_kcps / p_result->number_of_spad;
+    // p_result->ambient_per_spad_kcps =
+    //     p_result->ambient_rate_kcps / p_result->number_of_spad;
 
     return status;
 }
