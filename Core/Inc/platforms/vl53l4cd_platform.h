@@ -14,10 +14,7 @@
 #define VL53L4CD_PLATFORM
 #pragma once
 
-#define VL53L4CD_I2C_FAST_MODE_PLUS
-
 #include <stdint.h>
-// #include <string.h>
 
 /**
  * VL53L4CD device instance.
@@ -35,7 +32,7 @@ typedef uint8_t VL53L4CD_Error;
  * with I2C Fast Mode Plus (up to 1MHz). Otherwise, default max value is 400kHz.
  */
 
-// #define VL53L4CD_I2C_FAST_MODE_PLUS
+#define VL53L4CD_I2C_FAST_MODE_PLUS
 
 /**
  * @brief Read 32 bits through I2C.
