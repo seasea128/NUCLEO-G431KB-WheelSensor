@@ -40,11 +40,8 @@ void state_update_accel(state *state) {
 
     float accel = sqrt(diff_squared);
     if (is_neg) {
-
         state->current_accel_orthogonal = -accel;
-
     } else {
-
         state->current_accel_orthogonal = accel;
     }
     state->current_vel += state->current_accel_orthogonal * DELTA_TIME;
@@ -86,10 +83,10 @@ void state_update_vel(state *state, uint16_t distance, uint16_t error) {
                state->vel_calibrate);
 
     float vel_sum = 0;
-    for (int i = 0; i < state->vel_tof_ind; ++i) {
+    for (int i = 0; i < MAX_TOF_VEL_EST; ++i) {
         vel_sum += state->past_vel_tof[i];
     }
-    state->current_vel_tof = vel_sum / state->vel_tof_ind;
+    state->current_vel_tof = vel_sum / MAX_TOF_VEL_EST;
     printf("ToF Vel: %f", state->current_vel_tof);
 
     if (state->calibrated == false && state->vel_tof_ind >= MAX_TOF_VEL_EST) {
