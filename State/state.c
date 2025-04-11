@@ -3,32 +3,13 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 state state_init(void) {
-    state new_state;
-    memset(&new_state, 0, sizeof(state));
-    return new_state;
-    // return (state){
-    //     .imu1_results = {0, 0, 0},
-    //     .imu2_results = {0, 0, 0},
-    //     .imu_diff_results = {0, 0, 0},
+    state cur_state;
+    memset(&cur_state, 0, sizeof(state));
 
-    //    .imu1_mag = 0.f,
-    //    .imu2_mag = 0.f,
-
-    //    .current_accel_orthogonal = 0.f,
-    //    .current_vel = 0.f,
-    //    .current_vel_tof = 0.f,
-    //    .vel_tof_ind = 0,
-    //    .vel_calibrate = 0,
-    //    .calibrated = false,
-
-    //    .imu_vel_ind = 0,
-    //    .tof_error = 0,
-    //    .tof_distance = 0,
-    //    .estimated_distance = 0.f,
-    //    .estimated_delta = 0.f,
-    //};
+    return cur_state;
 }
 
 void state_update_accel(state *state) {
