@@ -64,7 +64,7 @@ add_executable(${CMAKE_PROJECT_NAME})
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 
-# Add kalman fitler
+# Add state library
 add_subdirectory(State)
 
 # Link directories setup

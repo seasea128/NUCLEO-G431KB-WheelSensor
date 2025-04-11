@@ -3,7 +3,7 @@
 #include "lsm6ds3tr_platform.h"
 #include <stdio.h>
 
-#define IMU_CALIBRATION_COUNT 500
+#define IMU_CALIBRATION_COUNT 100
 
 stmdev_ctx_t IMU_Setup(lsm6ds3tr_handle *handle) {
     stmdev_ctx_t imu_ctx = {.write_reg = platform_write,
@@ -41,7 +41,7 @@ stmdev_ctx_t IMU_Setup(lsm6ds3tr_handle *handle) {
         return (stmdev_ctx_t){.handle = 0};
     }
 
-    result = lsm6ds3tr_c_xl_full_scale_set(&imu_ctx, LSM6DS3TR_C_4g);
+    result = lsm6ds3tr_c_xl_full_scale_set(&imu_ctx, LSM6DS3TR_C_16g);
     if (result != HAL_OK) {
         printf("Failed to set scaling: %ld\r\n", result);
         return (stmdev_ctx_t){.handle = 0};
@@ -83,55 +83,10 @@ stmdev_ctx_t IMU_Setup(lsm6ds3tr_handle *handle) {
         return (stmdev_ctx_t){.handle = 0};
     }
 
-    result =
-        lsm6ds3tr_c_pin_int2_route_set(&imu_ctx, (lsm6ds3tr_c_int2_route_t){
-                                                     .int2_drdy_xl = 0,
-                                                     .int2_drdy_g = 0,
-                                                     .int2_drdy_temp = 0,
-                                                     .int2_fth = 0,
-                                                     .int2_fifo_ovr = 0,
-                                                     .int2_full_flag = 0,
-                                                     .int2_step_count_ov = 0,
-                                                     .int2_step_delta = 0,
-                                                     .int2_iron = 0,
-                                                     .int2_tilt = 0,
-                                                     .int2_6d = 0,
-                                                     .int2_double_tap = 0,
-                                                     .int2_ff = 0,
-                                                     .int2_wu = 0,
-                                                     .int2_single_tap = 0,
-                                                     .int2_inact_state = 0,
-                                                     .int2_wrist_tilt = 0,
-                                                 });
-
-    result =
-        lsm6ds3tr_c_pin_int1_route_set(&imu_ctx, (lsm6ds3tr_c_int1_route_t){
-                                                     .int1_drdy_xl = 1,
-                                                     .int1_drdy_g = 0,
-                                                     .int1_boot = 0,
-                                                     .int1_fth = 0,
-                                                     .int1_fifo_ovr = 0,
-                                                     .int1_full_flag = 0,
-                                                     .int1_sign_mot = 0,
-                                                     .int1_step_detector = 0,
-                                                     .int1_timer = 0,
-                                                     .int1_tilt = 0,
-                                                     .int1_6d = 0,
-                                                     .int1_double_tap = 0,
-                                                     .int1_ff = 0,
-                                                     .int1_wu = 0,
-                                                     .int1_single_tap = 0,
-                                                     .int1_inact_state = 0,
-                                                     .den_drdy_int1 = 0,
-                                                     .drdy_on_int1 = 0,
-                                                 });
-
-    printf("Finished setting interrupt\r\n");
-
-    if (result != HAL_OK) {
-        printf("Failed to set interrupts: %ld\r\n", result);
-        return (stmdev_ctx_t){.handle = 0};
-    }
+    // result = IMU_SetInterrupt(&imu_ctx);
+    // if (result) {
+    //     return (stmdev_ctx_t){.handle = 0};
+    // }
 
     // If the sensor is started up before the MCU, the interrupt line will be
     // stuck at high, need to reset interrupt by reading data because STM32
@@ -149,6 +104,57 @@ stmdev_ctx_t IMU_Setup(lsm6ds3tr_handle *handle) {
 
     return imu_ctx;
 }
+int32_t IMU_SetInterrupt(stmdev_ctx_t *imu_dev) {
+    int result =
+        lsm6ds3tr_c_pin_int2_route_set(imu_dev, (lsm6ds3tr_c_int2_route_t){
+                                                    .int2_drdy_xl = 0,
+                                                    .int2_drdy_g = 0,
+                                                    .int2_drdy_temp = 0,
+                                                    .int2_fth = 0,
+                                                    .int2_fifo_ovr = 0,
+                                                    .int2_full_flag = 0,
+                                                    .int2_step_count_ov = 0,
+                                                    .int2_step_delta = 0,
+                                                    .int2_iron = 0,
+                                                    .int2_tilt = 0,
+                                                    .int2_6d = 0,
+                                                    .int2_double_tap = 0,
+                                                    .int2_ff = 0,
+                                                    .int2_wu = 0,
+                                                    .int2_single_tap = 0,
+                                                    .int2_inact_state = 0,
+                                                    .int2_wrist_tilt = 0,
+                                                });
+
+    result =
+        lsm6ds3tr_c_pin_int1_route_set(imu_dev, (lsm6ds3tr_c_int1_route_t){
+                                                    .int1_drdy_xl = 1,
+                                                    .int1_drdy_g = 0,
+                                                    .int1_boot = 0,
+                                                    .int1_fth = 0,
+                                                    .int1_fifo_ovr = 0,
+                                                    .int1_full_flag = 0,
+                                                    .int1_sign_mot = 0,
+                                                    .int1_step_detector = 0,
+                                                    .int1_timer = 0,
+                                                    .int1_tilt = 0,
+                                                    .int1_6d = 0,
+                                                    .int1_double_tap = 0,
+                                                    .int1_ff = 0,
+                                                    .int1_wu = 0,
+                                                    .int1_single_tap = 0,
+                                                    .int1_inact_state = 0,
+                                                    .den_drdy_int1 = 0,
+                                                    .drdy_on_int1 = 0,
+                                                });
+
+    printf("Finished setting interrupt\r\n");
+
+    if (result != HAL_OK) {
+        printf("Failed to set interrupts: %d\r\n", result);
+    }
+    return result;
+}
 
 int32_t IMU_Calibrate(stmdev_ctx_t *imu_dev) {
     // Take 10 value and average it to get calibration value
@@ -156,6 +162,7 @@ int32_t IMU_Calibrate(stmdev_ctx_t *imu_dev) {
     int count = 0;
     float_t results[3] = {0.f, 0.f, 0.f};
     while (count < IMU_CALIBRATION_COUNT) {
+        printf("IMU calibration count: %d\r\n", count);
         float_t accel[3] = {0.f, 0.f, 0.f};
         int result = IMU_GetAccel(imu_dev, accel);
         if (result == HAL_OK) {
@@ -170,7 +177,7 @@ int32_t IMU_Calibrate(stmdev_ctx_t *imu_dev) {
 
     for (int i = 0; i < 3; i++) {
         results[i] /= IMU_CALIBRATION_COUNT;
-        // handle->xl_calibration_val[i] = results[i];
+        handle->xl_calibration_val[i] = results[i];
     }
 
     return 0;
@@ -190,9 +197,11 @@ int32_t IMU_GetAccel(stmdev_ctx_t *imu_dev, float_t *results) {
 
     lsm6ds3tr_handle *handle = (lsm6ds3tr_handle *)imu_dev->handle;
 
+    // Results unit is in milli G, 1G is equal to 9.81 m/s
+    // Conversion factor -> 9.81/1000
     for (int i = 0; i < 3; i++) {
-        results[i] = lsm6ds3tr_c_from_fs4g_to_mg(data[i]) -
-                     handle->xl_calibration_val[i];
+        results[i] = (lsm6ds3tr_c_from_fs16g_to_mg(data[i]) -
+                      handle->xl_calibration_val[i]);
     }
 
     return 0;
