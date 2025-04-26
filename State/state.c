@@ -1,7 +1,8 @@
 #include "state.h"
 #include <math.h>
 #include <stdbool.h>
-#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 state state_init(void) {
     state new_state;
@@ -16,8 +17,11 @@ state state_init(void) {
     //    .imu2_mag = 0.f,
 
     //    .current_accel_orthogonal = 0.f,
-    //    .current_vel_imu = 0.f,
-    //    .current_vel_imu_avg = 0.f,
+    //    .current_vel = 0.f,
+    //    .current_vel_tof = 0.f,
+    //    .vel_tof_ind = 0,
+    //    .vel_calibrate = 0,
+    //    .calibrated = false,
 
     //    .imu_vel_ind = 0,
     //    .tof_error = 0,
@@ -107,9 +111,36 @@ void state_predict_next(state *state) {
 
 void state_update_displacement(state *state, uint16_t displacement,
                                uint16_t error) {
+    // Calculate speed from ToF
+    state->past_vel_tof[state->vel_tof_ind++] =
+        // state->current_vel_tof =
+        ((abs(state->tof_distance - displacement) / TOF_DELTA_TIME) -
+         state->vel_calibrate) < 0
+            ? 0
+            : ((abs(state->tof_distance - displacement) / TOF_DELTA_TIME) -
+               state->vel_calibrate);
+
+    float vel_sum = 0;
+    for (int i = 0; i < state->vel_tof_ind; ++i) {
+        vel_sum += state->past_vel_tof[i];
+    }
+    state->current_vel_tof = vel_sum / state->vel_tof_ind;
+    printf("ToF Vel: %f", state->current_vel_tof);
+
+    if (state->calibrated == false && state->vel_tof_ind >= MAX_TOF_VEL_EST) {
+        state->vel_calibrate = state->current_vel_tof + 200;
+        state->calibrated = true;
+    }
+
+    printf(", vel_sum: %f", vel_sum);
+
+    if (state->vel_tof_ind >= MAX_TOF_VEL_EST) {
+        state->vel_tof_ind = 0;
+    }
+
     state->tof_distance = displacement;
     state->tof_error = error;
-    state->estimated_distance = displacement;
-    // state->current_vel_imu = 0.f;
-    // state->current_vel_imu_avg = 0.f;
+    state->estimated_displacement = displacement;
+    state->current_vel = 0.f;
+    printf("\r\n");
 }
