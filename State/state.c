@@ -105,10 +105,11 @@ void state_predict_next(state *state) {
     }
 }
 
-void state_update_vel(state *state, uint16_t velocity, uint16_t error) {
-    state->tof_distance = velocity;
+void state_update_displacement(state *state, uint16_t displacement,
+                               uint16_t error) {
+    state->tof_distance = displacement;
     state->tof_error = error;
-    state->estimated_distance = velocity;
+    state->estimated_distance = displacement;
     // state->current_vel_imu = 0.f;
     // state->current_vel_imu_avg = 0.f;
 }

@@ -277,7 +277,8 @@ int main(void) {
                 continue;
             }
 
-            state_update_vel(&current_state, tofResult, results.sigma_mm);
+            state_update_displacement(&current_state, tofResult,
+                                      results.sigma_mm);
         } else if (INT_STATUS.IMU_INT_1) {
             // TODO: Implement 1D state Filter to fuse IMU with ToF
             INT_STATUS.IMU_INT_1 = false;
