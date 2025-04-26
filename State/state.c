@@ -54,16 +54,11 @@ void state_update_accel(state *state) {
         squared_accel += state->imu1_results[i] * state->imu1_results[i];
     }
 
-    // Unit of accel here is mG, convert to mms^-2 by multiplying with 9.81
-    state->current_accel_orthogonal = (sqrt(squared_accel) - 1000) * 9.81;
-
-    if (state->current_accel_orthogonal <= 500 &&
-        state->current_accel_orthogonal >= -500) {
-        state->current_vel_imu = 0;
-        state->current_vel_imu_avg = 0;
+    float accel = sqrt(diff_squared);
+    if (is_neg) {
+        state->current_accel_orthogonal = -accel;
     } else {
-        state->current_vel_imu +=
-            state->current_accel_orthogonal * IMU_DELTA_TIME;
+        state->current_accel_orthogonal = accel;
     }
 
     state->vel_past_results[state->imu_vel_ind++] = state->current_vel_imu;
@@ -121,10 +116,10 @@ void state_update_displacement(state *state, uint16_t displacement,
                state->vel_calibrate);
 
     float vel_sum = 0;
-    for (int i = 0; i < state->vel_tof_ind; ++i) {
+    for (int i = 0; i < MAX_TOF_VEL_EST; ++i) {
         vel_sum += state->past_vel_tof[i];
     }
-    state->current_vel_tof = vel_sum / state->vel_tof_ind;
+    state->current_vel_tof = vel_sum / MAX_TOF_VEL_EST;
     printf("ToF Vel: %f", state->current_vel_tof);
 
     if (state->calibrated == false && state->vel_tof_ind >= MAX_TOF_VEL_EST) {
