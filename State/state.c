@@ -13,33 +13,23 @@ state state_init(void) {
 }
 
 void state_update_accel(state *state) {
-    // float diff_squared = 0;
-    // for (int i = 0; i < 3; i++) {
-    //     state->imu_diff_results[i] =
-    //         state->imu1_results[i] - state->imu2_results[i];
-    //     diff_squared += state->imu_diff_results[i] *
-    //     state->imu_diff_results[i];
-    // }
-
-    // float accel = sqrt(diff_squared);
-    // if (is_neg) {
-
-    //     state->current_accel_orthogonal = -accel;
-
-    // } else {
-
-    //     state->current_accel_orthogonal = accel;
-    // }
-    float squared_accel = 0;
+    float diff_squared = 0;
     for (int i = 0; i < 3; i++) {
-        squared_accel += state->imu1_results[i] * state->imu1_results[i];
+        state->imu_diff_results[i] =
+            state->imu1_results[i] - state->imu2_results[i];
+        diff_squared += state->imu_diff_results[i] * state->imu_diff_results[i];
     }
 
     float accel = sqrt(diff_squared);
-    if (is_neg) {
+    if (diff_squared < 0) {
         state->current_accel_orthogonal = -accel;
     } else {
         state->current_accel_orthogonal = accel;
+    }
+
+    float squared_accel = 0;
+    for (int i = 0; i < 3; i++) {
+        squared_accel += state->imu1_results[i] * state->imu1_results[i];
     }
 
     state->vel_past_results[state->imu_vel_ind++] = state->current_vel_imu;
@@ -77,10 +67,10 @@ void state_predict_next(state *state) {
     if (state->current_vel_imu > 10) {
         state->estimated_delta =
             state->estimated_delta + IMU_DELTA_TIME * state->current_vel_imu;
-        state->estimated_distance =
+        state->estimated_displacement =
             state->tof_distance + state->estimated_delta;
     } else {
-        state->estimated_distance = state->tof_distance;
+        state->estimated_displacement = state->tof_distance;
         state->estimated_delta = 0;
     }
 }

@@ -4,12 +4,14 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#define DELTA_TIME (1 / 416.f)
+#define MAX_IMU_AVG_COUNT 833
+#define IMU_DELTA_TIME (1 / 833.f)
 #define TOF_DELTA_TIME (1 / 100.f)
 #define MAX_TOF_VEL_EST 100
 
 typedef struct state_s {
     float past_vel_tof[MAX_TOF_VEL_EST];
+    float vel_past_results[MAX_IMU_AVG_COUNT];
     float imu1_results[3];
     float imu2_results[3];
     float imu_diff_results[3];
@@ -23,8 +25,10 @@ typedef struct state_s {
     float current_accel_orthogonal;
     float current_vel;
     float current_vel_tof;
+    float current_vel_imu;
+    float current_vel_imu_avg;
     float vel_calibrate;
-    float estimated_distance;
+    float estimated_displacement;
     float estimated_delta;
 
     size_t imu_vel_ind;
