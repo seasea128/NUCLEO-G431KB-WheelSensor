@@ -35,6 +35,6 @@ void state_update_accel(state *state);
 
 void state_predict_next(state *state);
 
-void state_update_vel(state *state, uint16_t velocity, uint16_t error);
+void state_update_displacement(state *state, uint16_t velocity, uint16_t error);
 
 #endif
