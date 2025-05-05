@@ -204,22 +204,22 @@ int main(void) {
 
     // printf("Setting up IMU1\r\n");
     stmdev_ctx_t imu1 = IMU_Setup(&handle1);
-    if (imu1.handle == 0) {
-        // TODO: More logging
-        return 127;
-    }
-    printf("Calibrating IMU1\r\n");
+    // if (imu1.handle == 0) {
+    //    // TODO: More logging
+    //    return 127;
+    //}
+    // printf("Calibrating IMU1\r\n");
     // status = IMU_Calibrate(&imu1);
     // if (status != HAL_OK) {
     //     printf("Failed to calibrate IMU1: %d\r\n", status);
     //     return -123;
     // }
 
-    status = IMU_SetInterrupt(&imu1);
-    if (status != HAL_OK) {
-        printf("Failed to set interrupt on IMU1: %d\r\n", status);
-        return -124;
-    }
+    // status = IMU_SetInterrupt(&imu1);
+    // if (status != HAL_OK) {
+    //     printf("Failed to set interrupt on IMU1: %d\r\n", status);
+    //     return -124;
+    // }
 
     // printf("Setting up IMU2\r\n");
     stmdev_ctx_t imu2 = IMU_Setup(&handle2);
@@ -233,6 +233,12 @@ int main(void) {
     //      printf("Failed to calibrate IMU2: %d\r\n", status);
     //      return -123;
     //  }
+    //
+    // status = IMU_SetInterrupt(&imu2);
+    // if (status != HAL_OK) {
+    //    printf("Failed to set interrupt on IMU1: %d\r\n", status);
+    //    return -124;
+    //}
 
     current_state = state_init();
 
@@ -256,7 +262,7 @@ int main(void) {
             }
             if (results.range_status == 0) {
                 tofResult = results.distance_mm;
-                // printf("TOF result got: %d\r\n", tofResult);
+                printf("TOF result got: %d\r\n", tofResult);
                 //  printf("Sending new CAN message\r\n");
                 int status = HAL_FDCAN_AddMessageToTxFifoQ(
                     &hfdcan1, &header, (uint8_t *)(&tofResult));
